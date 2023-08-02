@@ -20,19 +20,6 @@ const Stack = createStackNavigator();
 
 export default function App() {
     return (
-        // <NavigationContainer>
-        //     <Tab.Navigator>
-        //         <Tab.Screen
-        //             component={SignInScreen}
-        //             name="SignIn"
-        // options={{
-        // headerStyle: { backgroundColor: "skyblue" },
-        // headerTintColor: "#fff",
-        // }}
-        //         ></Tab.Screen>
-        //         <Tab.Screen component={ProfileScreen} name="Profile" options={{headerStyle:{backgroundColor:"#648FFF"}, headerTintColor:"#fff"}}></Tab.Screen>
-        //     </Tab.Navigator>
-        // </NavigationContainer>
 
         <NavigationContainer>
             <Stack.Navigator initialRouteName="SignIn">

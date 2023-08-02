@@ -8,6 +8,8 @@ import {
     SafeAreaView,
     ScrollView,
     Alert,
+    ActivityIndicator,
+    LayoutAnimation,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 // import the auth variable
@@ -26,7 +28,7 @@ const RentOutForm = ({ navigation, route }) => {
     const [photos, updatePhotos] = useState([]);
     const [seat, setSeat] = useState("");
     const [range, setRange] = useState("");
-    const [hp, setHp] = useState("100");
+    const [hp, setHp] = useState("");
     const [licensePlate, setLicensePlate] = useState("");
     const [price, setPrice] = useState("");
     const [street, setStreet] = useState("");
@@ -38,7 +40,8 @@ const RentOutForm = ({ navigation, route }) => {
     const [seatCap, setSeatCap] = useState([]);
     const [lat, setLat] = useState("");
     const [lon, setLon] = useState("");
-
+    const [loading, setLoading] = useState(false);
+    const [confirmAddr, setConfirmAddr] = useState(true);
     const brandmake = [];
 
     navigation.setOptions({
@@ -48,7 +51,7 @@ const RentOutForm = ({ navigation, route }) => {
                     name="angle-left"
                     size={32}
                     color="white"
-                    style={{ marginLeft: 10, borderWidth: 1}}
+                    style={{ marginLeft: 10, borderWidth: 1 }}
                 />
             </Pressable>
         ),
@@ -57,6 +60,7 @@ const RentOutForm = ({ navigation, route }) => {
 
     const getCurrentLocation = async () => {
         try {
+            setLoading(true);
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== "granted") {
                 Alert.alert(`Permission to access location was denied`);
@@ -65,7 +69,7 @@ const RentOutForm = ({ navigation, route }) => {
 
             let location = await Location.getCurrentPositionAsync();
 
-            Alert.alert(JSON.stringify(location));
+            // Alert.alert(JSON.stringify(location));
             doReverseGeocode(
                 location.coords.latitude,
                 location.coords.longitude
@@ -94,6 +98,8 @@ const RentOutForm = ({ navigation, route }) => {
 
             if (result === undefined) {
                 Alert.alert("No results found.");
+                setLoading(false);
+                setConfirmAddr(true);
                 return;
             }
 
@@ -101,6 +107,9 @@ const RentOutForm = ({ navigation, route }) => {
             setStreet(result.street);
             setCity(result.city);
             setCountry(result.country);
+            setLoading(false);
+            setConfirmAddr(false);
+            Alert.alert("Current Address Set");
         } catch (err) {
             console.log(err);
         }
@@ -109,7 +118,7 @@ const RentOutForm = ({ navigation, route }) => {
     const doForwardGeocode = async (street, city, country) => {
         // 0. On android, permissions must be granted
         // code to ask for permissions goes here
-
+        setLoading(true);
         try {
             // 1. Do forward geocode
             const geocodedLocation = await Location.geocodeAsync(
@@ -120,7 +129,9 @@ const RentOutForm = ({ navigation, route }) => {
             const result = geocodedLocation[0];
             if (result === undefined) {
                 alert("No coordinates found");
-                return;
+                setLoading(false);
+                setConfirmAddr(true);
+                return false;
             }
 
             // 3. If yes, extract relevant data
@@ -128,9 +139,13 @@ const RentOutForm = ({ navigation, route }) => {
             console.log(`Longitude: ${result.longitude}`);
             setLat(result.latitude);
             setLon(result.longitude);
+            setLoading(false);
+            setConfirmAddr(false);
+            Alert.alert("Address Confirmed");
         } catch (err) {
             console.log(err);
         }
+        return true;
     };
 
     const getVehiclesFromApi = async () => {
@@ -211,52 +226,111 @@ const RentOutForm = ({ navigation, route }) => {
                 //set hp
                 setHp(String(item.horsepower));
                 //set seat
-                setSeat(item.seats_min);
+                setSeat(String(item.seats_min));
             }
         });
         // console.log(trim);
         // console.log(photos);
     };
 
+    const doValidation = () => {
+        if (Object.keys(brand).length == 0) {
+            Alert.alert("Missing Data", "Please fill in vehicle brand");
+            return false;
+        }
+        if (Object.keys(model).length == 0) {
+            Alert.alert("Missing Data", "Please fill in vehicle model");
+            return false;
+        }
+        if (Object.keys(seat).length == 0) {
+            Alert.alert("Missing Data", "Please fill in vehicle seat");
+            return false;
+        }
+        if (Object.keys(range).length == 0) {
+            Alert.alert("Missing Data", "Please fill in vehicle range");
+            return false;
+        }
+        if (Object.keys(hp).length == 0) {
+            Alert.alert("Missing Data", "Please fill in vehicle house power");
+            return false;
+        }
+        if (Object.keys(licensePlate).length == 0) {
+            Alert.alert("Missing Data", "Please fill in vehicle license plate");
+            return false;
+        }
+        if (Object.keys(price).length == 0) {
+            Alert.alert("Missing Data", "Please fill in vehicle price");
+            return false;
+        }
+        if (Object.keys(street).length == 0) {
+            Alert.alert("Missing Data", "Please fill in street");
+            return false;
+        }
+        if (Object.keys(city).length == 0) {
+            Alert.alert("Missing Data", "Please fill in city");
+            return false;
+        }
+        if (Object.keys(country).length == 0) {
+            Alert.alert("Missing Data", "Please fill in country");
+            return false;
+        }
+        if (confirmAddr) {
+            Alert.alert("Address changed", "Please confirm address");
+            return false;
+        }
+        return true;
+    };
+
     const uploadToDB = async () => {
-        const dataToAdd = {
-            brand: brand,
-            model: model,
-            trim: trim,
-            photos: photos,
-            seat: seat,
-            range: range,
-            hp: hp,
-            licensePlate: licensePlate,
-            price: price,
-            street: street,
-            city: city,
-            country: country,
-            ownerID: auth.currentUser.uid,
-            status: "idle",
-            waitingList: [],
-            renter: {
-                name: "",
-                id: "",
-            },
-            lat: lat,
-            lon: lon,
-        };
-        try {
-            const carListingCollectionRef = collection(
-                db,
-                `OwnerProfiles/${auth.currentUser.uid}/Listing`
-            );
-            const insertDoc = await addDoc(carListingCollectionRef, dataToAdd);
-            console.log("Document written with ID: ", insertDoc.id);
-    
-            const insertDoc2 = await setDoc(doc(db, "carListing", insertDoc.id), {
+        if (doValidation()) {
+            console.log(brand);
+            const dataToAdd = {
+                brand: brand,
+                model: model,
+                trim: trim,
+                photos: photos,
+                seat: seat,
+                range: range,
+                hp: hp,
+                licensePlate: licensePlate,
+                price: price,
+                street: street,
+                city: city,
+                country: country,
                 ownerID: auth.currentUser.uid,
-                docID: insertDoc.id,
-            });
-         
-        } catch (err) {
-            console.log(err);
+                status: "idle",
+                waitingList: [],
+                renter: {
+                    name: "",
+                    id: "",
+                },
+                lat: lat,
+                lon: lon,
+            };
+            try {
+                const carListingCollectionRef = collection(
+                    db,
+                    `OwnerProfiles/${auth.currentUser.uid}/Listing`
+                );
+                const insertDoc = await addDoc(
+                    carListingCollectionRef,
+                    dataToAdd
+                );
+                console.log("Document written with ID: ", insertDoc.id);
+
+                const insertDoc2 = await setDoc(
+                    doc(db, "carListing", insertDoc.id),
+                    {
+                        ownerID: auth.currentUser.uid,
+                        docID: insertDoc.id,
+                    }
+                );
+                Alert.alert("Updated");
+            } catch (err) {
+                console.log(err);
+            }
+        } else {
+            return;
         }
     };
 
@@ -266,6 +340,22 @@ const RentOutForm = ({ navigation, route }) => {
 
     return (
         <SafeAreaView style={styles.container}>
+            {loading ? (
+                <View
+                    style={{
+                        justify: "center",
+                        alignItems: "center",
+                        alignSelf: "center",
+                        position: "absolute",
+                        zIndex: 1,
+                    }}
+                >
+                    <ActivityIndicator size="large" color="blue" />
+                </View>
+            ) : (
+                <View></View>
+            )}
+
             <ScrollView style={styles.container_scrollview}>
                 <Text style={styles.text_title}>Car Brand:</Text>
                 <Dropdown
@@ -357,7 +447,10 @@ const RentOutForm = ({ navigation, route }) => {
                     keyboardType="default"
                     autoCapitalize="none"
                     value={street}
-                    onChangeText={setStreet}
+                    onChange={(event) => {
+                        setStreet(event.nativeEvent.text);
+                        setConfirmAddr(true);
+                    }}
                 />
                 <TextInput
                     style={styles.text}
@@ -365,7 +458,10 @@ const RentOutForm = ({ navigation, route }) => {
                     keyboardType="default"
                     autoCapitalize="none"
                     value={city}
-                    onChangeText={setCity}
+                    onChange={(event) => {
+                        setCity(event.nativeEvent.text);
+                        setConfirmAddr(true);
+                    }}
                 />
                 <TextInput
                     style={styles.text}
@@ -373,7 +469,10 @@ const RentOutForm = ({ navigation, route }) => {
                     keyboardType="default"
                     autoCapitalize="none"
                     value={country}
-                    onChangeText={setCountry}
+                    onChange={(event) => {
+                        setCountry(event.nativeEvent.text);
+                        setConfirmAddr(true);
+                    }}
                 />
 
                 <View style={styles.container_view}>
@@ -436,6 +535,7 @@ const styles = StyleSheet.create({
         paddingTop: Platform.OS == "android" ? StatusBar.currentHeight : 0,
         padding: 40,
         alignItems: "center",
+        justifyContent: "center",
     },
     container_view: {
         borderColor: "blue",

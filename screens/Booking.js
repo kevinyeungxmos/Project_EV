@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     View,
     Text,
@@ -51,13 +51,13 @@ const Booking = ({navigation, route}) => {
                     }
                     if (change.type === "modified") {
                         console.log("Modified ", change.doc.id);
-                        // setCar(car.filter((a) => a.id != change.doc.id));
-                        // setCar((newVic) => [...newVic, carChanged])
+                        setCar(car.filter((a) => a.id != change.doc.id));
+                        setCar((newVic) => [...newVic, carChanged])
                         setResub(resub+1)
                     }
                     if (change.type === "removed") {
                         console.log("Removed ", change.doc.id);
-                        // setCar(car.filter((a) => a.id !== change.doc.id));
+                        setCar(car.filter((a) => a.id !== change.doc.id));
                         setResub(resub+1)
                     }
                 });

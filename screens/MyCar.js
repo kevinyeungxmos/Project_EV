@@ -16,15 +16,19 @@ import { Dropdown } from "react-native-element-dropdown";
 // import the auth variable
 import { auth } from "../firebaseConfig";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { collection, addDoc, setDoc, getDocs } from "firebase/firestore";
+import { collection, addDoc, setDoc, getDocs, onSnapshot } from "firebase/firestore";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { db } from "../firebaseConfig";
 import { useSafeAreaFrame } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 
+
+let unsub;
+
 const MyCar = ({ navigation }) => {
     const [carList, setCarList] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
+    const [resub, setResub] = useState(0);
 
     const onRefresh = useCallback(() => {
         setRefreshing(true);
@@ -36,7 +40,7 @@ const MyCar = ({ navigation }) => {
 
     const getDataFromDB = async () => {
         setCarList((cl) => []);
-        console.log("updated car list")
+        console.log("updated car list");
         try {
             const querySnapshot = await getDocs(
                 collection(db, `OwnerProfiles/${auth.currentUser.uid}/Listing`)
@@ -54,9 +58,43 @@ const MyCar = ({ navigation }) => {
         }
     };
 
+    // useEffect(() => {
+    //     getDataFromDB();
+    // }, []);
+
     useEffect(() => {
-        getDataFromDB();
-    }, []);
+        unsub = onSnapshot(
+            collection(db, `OwnerProfiles/${auth.currentUser.uid}/Listing`),
+            (snapshot) => {
+                console.log("active");
+                snapshot.docChanges().forEach((change) => {
+                    const carChanged = change.doc.data();
+                    carChanged.id = change.doc.id;
+                    if (change.type === "added") {
+                        console.log("New ", change.doc.id);
+                        setCarList((newVic) => [...newVic, carChanged]);
+                    }
+                    if (change.type === "modified") {
+                        console.log("Modified ", change.doc.id);
+                        setCarList(carList.filter((a) => a.id != change.doc.id));
+                        setCarList((newVic) => [...newVic, carChanged])
+                        setResub(resub+1)
+                    }
+                    if (change.type === "removed") {
+                        console.log("Removed ", change.doc.id);
+                        setCarList(carList.filter((a) => a.id !== change.doc.id));
+                        setResub(resub+1)
+                    }
+                });
+            }
+        );
+        
+        return () => {
+            console.log("unmounted");
+            setCarList((a)=>[])
+            unsub();
+        };
+    }, [resub]);
 
     // const hh = () => {
     //     carList.map((item) => {
@@ -90,81 +128,72 @@ const MyCar = ({ navigation }) => {
     });
     return (
         <SafeAreaView>
-
-            <ScrollView
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                    />
-                }
-            >
-                <FlatList
-                    style={{ marginLeft: 10 }}
-                    data={carList}
-                    ItemSeparatorComponent={() => {
-                        return (
+            <FlatList
+            onRefresh={onRefresh}
+            refreshing={refreshing}
+                style={{ marginLeft: 10 }}
+                data={carList}
+                ItemSeparatorComponent={() => {
+                    return (
+                        <View
+                            style={{
+                                borderWidth: 1,
+                                borderColor: "black",
+                                marginRight: 10,
+                            }}
+                        />
+                    );
+                }}
+                renderItem={({ item, index }) => {
+                    // describe the UI for each row
+                    // inside this function
+                    return (
+                        <Pressable
+                            onPress={() => {
+                                onListPress(index);
+                            }}
+                        >
                             <View
                                 style={{
-                                    borderWidth: 1,
-                                    borderColor: "black",
-                                    marginRight: 10,
-                                }}
-                            />
-                        );
-                    }}
-                    renderItem={({ item, index }) => {
-                        // describe the UI for each row
-                        // inside this function
-                        return (
-                            <Pressable
-                                onPress={() => {
-                                    onListPress(index);
+                                    flexDirection: "row",
+                                    alignItems: "center",
                                 }}
                             >
-                                <View
+                                <Text
                                     style={{
-                                        flexDirection: "row",
-                                        alignItems: "center",
+                                        fontWeight: "bold",
+                                        fontSize: 18,
                                     }}
                                 >
+                                    {" "}
+                                    {index + 1}{" "}
+                                </Text>
+                                <Image
+                                    source={{
+                                        uri: item.photos[0].photoURL,
+                                    }}
+                                    style={{
+                                        height: 75,
+                                        width: 75,
+                                        marginLeft: 10,
+                                    }}
+                                />
+                                <View style={{ marginLeft: 10, paddingRight: 110 }}>
                                     <Text
                                         style={{
                                             fontWeight: "bold",
                                             fontSize: 18,
                                         }}
                                     >
-                                        {" "}
-                                        {index + 1}{" "}
+                                        {item.brand} {item.model} {item.trim}
                                     </Text>
-                                    <Image
-                                        source={{
-                                            uri: item.photos[0].photoURL,
-                                        }}
-                                        style={{
-                                            height: 75,
-                                            width: 75,
-                                            marginLeft: 10,
-                                        }}
-                                    />
-                                    <View style={{ marginLeft: 20 }}>
-                                        <Text
-                                            style={{
-                                                fontWeight: "bold",
-                                                fontSize: 18,
-                                            }}
-                                        >
-                                            {item.brand} {item.model}{" "}
-                                            {item.trim}
-                                        </Text>
-                                        <Text>status: {item.status}</Text>
-                                    </View>
+                                    <Text>status: {item.status}</Text>
                                 </View>
-                            </Pressable>
-                        );
-                    }}
-                />
-            </ScrollView>
+                            </View>
+                        </Pressable>
+                    );
+                }}
+            />
         </SafeAreaView>
     );
 };

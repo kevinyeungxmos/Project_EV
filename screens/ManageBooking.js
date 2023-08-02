@@ -112,25 +112,61 @@ const ManageBooking = ({ route, navigation }) => {
                 },
                 waitingList: newList,
             });
-            console.log("user id => ", id)
-            console.log("car id  => ", carReserved.id)
-            const updateUserRef = query(collection(db, `UserProfiles/${id}/Reserved`), where("CarID", "==", carReserved.id))
-              
+            console.log("user id => ", id);
+            console.log("car id  => ", carReserved.id);
+            const updateUserRef = query(
+                collection(db, `UserProfiles/${id}/Reserved`),
+                where("CarID", "==", carReserved.id)
+            );
+
             const querysnapshot = await getDocs(updateUserRef);
-            let docID
+            let docID;
             querysnapshot.forEach((doc) => {
                 console.log(doc.id);
-                docID = doc.id
+                docID = doc.id;
             });
 
-            const udd = doc(db, `UserProfiles/${id}/Reserved`, docID)
+            const udd = doc(db, `UserProfiles/${id}/Reserved`, docID);
             await updateDoc(udd, {
                 comfirmationCode: newList[index].comfirmationCode,
                 status: "confirmed",
-            })
+            });
         } else {
             Alert.alert("Error", "Already rented out");
         }
+    };
+
+    const onDecline = async (name, id, index) => {
+        const newList = carReserved.waitingList;
+        newList[index].comfirmationCode = "declined";
+
+        const updateDocRef = doc(
+            db,
+            `OwnerProfiles/${auth.currentUser.uid}/Listing`,
+            `${carReserved.id}`
+        );
+        await updateDoc(updateDocRef, {
+            waitingList: newList,
+        });
+
+        const updateUserRef = query(
+            collection(db, `UserProfiles/${id}/Reserved`),
+            where("CarID", "==", carReserved.id)
+        );
+
+        const querysnapshot = await getDocs(updateUserRef);
+        let docID;
+        querysnapshot.forEach((doc) => {
+            console.log(doc.id);
+            docID = doc.id;
+        });
+
+        const udd = doc(db, `UserProfiles/${id}/Reserved`, docID);
+        await updateDoc(udd, {
+            status: "declined",
+        });
+
+        Alert.alert("Message", `You declined ${name} request`);
     };
 
     return (
@@ -147,6 +183,7 @@ const ManageBooking = ({ route, navigation }) => {
                 />
                 <View>
                     <Text>License Plate: {carReserved.licensePlate}</Text>
+                    <Text>Car status: {waiting.status}</Text>
                     <Text>Price: {carReserved.price}</Text>
                     <Text>Renter: {name}</Text>
                 </View>
@@ -193,14 +230,21 @@ const ManageBooking = ({ route, navigation }) => {
                             </Text>
 
                             <View style={{ marginLeft: -20 }}>
-                                <Text>status: {carReserved.status}</Text>
                                 <Text>Booking Date: {item.date}</Text>
                                 <Text>
                                     Comfirmation Code: {item.comfirmationCode}
                                 </Text>
                             </View>
                             {item.comfirmationCode != "" ? (
-                                <Text>{item.name} is renting your vehicle</Text>
+                                item.comfirmationCode == "declined" ? (
+                                    <Text>
+                                        {item.name}'s request has been declined
+                                    </Text>
+                                ) : (
+                                    <Text>
+                                        {item.name} is renting your vehicle
+                                    </Text>
+                                )
                             ) : (
                                 <View
                                     style={{
@@ -251,7 +295,11 @@ const ManageBooking = ({ route, navigation }) => {
                                             backgroundColor: "red",
                                         }}
                                         onPress={() => {
-                                            console.log("clicked");
+                                            onDecline(
+                                                item.name,
+                                                item.id,
+                                                index
+                                            );
                                         }}
                                     >
                                         <Text

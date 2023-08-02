@@ -30,7 +30,7 @@ const CarInfo = ({ navigation, route }) => {
     const [photos, updatePhotos] = useState([]);
     const [seat, setSeat] = useState("");
     const [range, setRange] = useState("");
-    const [hp, setHp] = useState("100");
+    const [hp, setHp] = useState("");
     const [licensePlate, setLicensePlate] = useState("");
     const [price, setPrice] = useState("");
     const [street, setStreet] = useState("");
