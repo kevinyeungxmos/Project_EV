@@ -21,7 +21,7 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import { db } from "../firebaseConfig";
 import { useSafeAreaFrame } from "react-native-safe-area-context";
 import * as Location from "expo-location";
-
+import { onLogoutClicked } from "./SignInScreen";
 
 let unsub;
 
@@ -58,10 +58,6 @@ const MyCar = ({ navigation }) => {
         }
     };
 
-    // useEffect(() => {
-    //     getDataFromDB();
-    // }, []);
-
     useEffect(() => {
         unsub = onSnapshot(
             collection(db, `OwnerProfiles/${auth.currentUser.uid}/Listing`),
@@ -96,18 +92,8 @@ const MyCar = ({ navigation }) => {
         };
     }, [resub]);
 
-    // const hh = () => {
-    //     carList.map((item) => {
-    //         console.log(item.brand);
-    //     });
-    // };
-
-    // const hs = (data) => {
-    //     console.log(data);
-    // };
 
     const onListPress = (index) => {
-        console.log(index);
         navigation.navigate("CarInfo", {
             cardata: carList[index],
         });
@@ -125,6 +111,19 @@ const MyCar = ({ navigation }) => {
             </Pressable>
         ),
         title: "My Car",
+        headerRight: () => (
+            <Pressable onPress={() => {
+                onLogoutClicked();
+                navigation.popToTop();
+            }}>
+                <Icon
+                    name="sign-out"
+                    size={32}
+                    color="white"
+                    style={{ marginRight: 10, borderWidth: 1 }}
+                />
+            </Pressable>
+        ),
     });
     return (
         <SafeAreaView>

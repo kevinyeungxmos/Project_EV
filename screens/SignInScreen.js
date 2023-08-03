@@ -25,28 +25,11 @@ const SignInScreen = ({navigation, route}) => {
                 usernameFromUI,
                 passwordFromUI
             );
-            // who is the current user?
-            console.log("Who is the currently logged in user");
-            console.log(auth.currentUser);
-            Alert.alert(`Login success! ${auth.currentUser.uid}`);
+            
             navigation.navigate("Home", {screen: "MyCar"})
         } catch (err) {
             console.log(err);
-            Alert.alert(`Error! ${err}`);
-        }
-    };
-
-    const onLogoutClicked = async () => {
-        try {
-            // 1. check if a user is currently logged in
-            if (auth.currentUser === null) {
-                Alert.alert("Sorry, no user is logged in.");
-            } else {
-                await signOut(auth);
-                Alert.alert("Logout complete!");
-            }
-        } catch (err) {
-            console.log(err);
+            Alert.alert(`Error! Wrong email or password`);
         }
     };
 
@@ -74,14 +57,9 @@ const SignInScreen = ({navigation, route}) => {
                 onChangeText={setPasswordFromUI}
             />
 
-            <Pressable style={styles.btn}>
-                <Text style={styles.btnLabel} onPress={onLoginClicked}>
+            <Pressable style={styles.btn} onPress={onLoginClicked}>
+                <Text style={styles.btnLabel}>
                     Login
-                </Text>
-            </Pressable>
-            <Pressable style={styles.btn}>
-                <Text style={styles.btnLabel} onPress={gotoHome}>
-                    Logout
                 </Text>
             </Pressable>
         </SafeAreaView>
@@ -129,5 +107,19 @@ const styles = StyleSheet.create({
         marginVertical: 10,
     },
 });
+
+export const onLogoutClicked = async () => {
+    try {
+        // 1. check if a user is currently logged in
+        if (auth.currentUser === null) {
+            Alert.alert("Sorry, no user is logged in.");
+        } else {
+            await signOut(auth);
+            Alert.alert("Logout complete!");
+        }
+    } catch (err) {
+        console.log(err);
+    }
+};
 
 export default SignInScreen;

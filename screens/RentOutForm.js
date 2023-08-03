@@ -10,18 +10,24 @@ import {
     Alert,
     ActivityIndicator,
     LayoutAnimation,
+    Dimensions,
+    Image,
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 // import the auth variable
 import { auth } from "../firebaseConfig";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { collection, addDoc, setDoc, doc } from "firebase/firestore";
+import { collection, addDoc, setDoc, doc, getDoc } from "firebase/firestore";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { db } from "../firebaseConfig";
 import { useSafeAreaFrame } from "react-native-safe-area-context";
 import * as Location from "expo-location";
+import { onLogoutClicked } from "./SignInScreen";
+
+const windowWidth = Dimensions.get("window").width;
 
 const RentOutForm = ({ navigation, route }) => {
+    const [ownerName, setOwnername] = useState("");
     const [brand, setBrand] = useState("");
     const [model, setModel] = useState("");
     const [trim, setTrim] = useState("");
@@ -42,6 +48,7 @@ const RentOutForm = ({ navigation, route }) => {
     const [lon, setLon] = useState("");
     const [loading, setLoading] = useState(false);
     const [confirmAddr, setConfirmAddr] = useState(true);
+    const [count, setCount] = useState(0);
     const brandmake = [];
 
     navigation.setOptions({
@@ -56,6 +63,21 @@ const RentOutForm = ({ navigation, route }) => {
             </Pressable>
         ),
         title: "Car Rent Out Form",
+        headerRight: () => (
+            <Pressable
+                onPress={() => {
+                    onLogoutClicked();
+                    navigation.popToTop();
+                }}
+            >
+                <Icon
+                    name="sign-out"
+                    size={32}
+                    color="white"
+                    style={{ marginRight: 10, borderWidth: 1 }}
+                />
+            </Pressable>
+        ),
     });
 
     const getCurrentLocation = async () => {
@@ -64,6 +86,7 @@ const RentOutForm = ({ navigation, route }) => {
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== "granted") {
                 Alert.alert(`Permission to access location was denied`);
+                setLoading(false);
                 return;
             }
 
@@ -131,7 +154,7 @@ const RentOutForm = ({ navigation, route }) => {
                 alert("No coordinates found");
                 setLoading(false);
                 setConfirmAddr(true);
-                return false;
+                return;
             }
 
             // 3. If yes, extract relevant data
@@ -145,7 +168,6 @@ const RentOutForm = ({ navigation, route }) => {
         } catch (err) {
             console.log(err);
         }
-        return true;
     };
 
     const getVehiclesFromApi = async () => {
@@ -281,10 +303,45 @@ const RentOutForm = ({ navigation, route }) => {
         return true;
     };
 
+    const cleanupPage = () => {
+        //clean up the form
+        setBrand("");
+        setModel("");
+        setSeat("");
+        setTrim("");
+        setCity("");
+        setStreet("");
+        setCountry("");
+        setSeatCap((a) => []);
+        setHp("");
+        setRange("");
+        setPrice("");
+        updatePhotos((a) => []);
+        setLicensePlate("");
+        setModelList((a)=>[]);
+        setBrandList((a)=>[]);
+    };
+    
+    const getOwnerName = async () => {
+
+        const docRef = doc(
+            db,
+            `OwnerProfiles`,
+            `${auth.currentUser.uid}`
+        );
+        const snapShot = await getDoc(docRef);
+        if (snapShot.exists()) {
+            setOwnername(snapShot.data().name)
+          } else {
+            console.log("No such user name");
+          }
+    }
+
     const uploadToDB = async () => {
         if (doValidation()) {
             console.log(brand);
             const dataToAdd = {
+                ownerName: ownerName,
                 brand: brand,
                 model: model,
                 trim: trim,
@@ -325,7 +382,9 @@ const RentOutForm = ({ navigation, route }) => {
                         docID: insertDoc.id,
                     }
                 );
-                Alert.alert("Updated");
+                Alert.alert("Vehicle list on rental market");
+                cleanupPage();
+                setCount(count+1);
             } catch (err) {
                 console.log(err);
             }
@@ -334,9 +393,16 @@ const RentOutForm = ({ navigation, route }) => {
         }
     };
 
+    // const i = item.waitingList.filter((item)=>{
+    //     if (item.name == userName){
+    //         return item
+    //     }
+    // })
+
     useEffect(() => {
         getVehiclesFromApi();
-    }, []);
+        getOwnerName();
+    }, [count]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -363,9 +429,10 @@ const RentOutForm = ({ navigation, route }) => {
                     data={brandList}
                     search
                     searchPlaceholder="Search"
-                    placeholder="Select Car Brand"
+                    placeholder= "Select a car brand"
                     labelField="make"
                     valueField="id"
+                    value={brandList}
                     onChange={(item) => {
                         getCarModel(item.make);
                     }}
@@ -376,9 +443,10 @@ const RentOutForm = ({ navigation, route }) => {
                     data={modelList}
                     search
                     searchPlaceholder="Search"
-                    placeholder="Select A Model"
+                    placeholder= "Select a model"
                     labelField="model"
                     valueField="id"
+                    value={modelList}
                     onChange={(item) => {
                         // console.log(item.model);
                         setModel(item.model);
@@ -397,7 +465,7 @@ const RentOutForm = ({ navigation, route }) => {
                     value={seatCap[0]}
                     onChange={(item) => {
                         // console.log(item.seatNo);
-                        setSeat(item.seatNo);
+                        setSeat(String(item.seatNo));
                         // getCarTrim(item.model)
                     }}
                 ></Dropdown>
@@ -420,6 +488,30 @@ const RentOutForm = ({ navigation, route }) => {
                     onChangeText={setRange}
                     keyboardType="numeric"
                 />
+
+                <Text style={styles.text_title}>Car Photos:</Text>
+                <ScrollView
+                    horizontal={true}
+                    pagingEnabled={true}
+                    showsHorizontalScrollIndicator={true}
+                    style={{
+                        borderWidth: 1,
+                        borderColor: "black",
+                        width: windowWidth * 0.9,
+                    }}
+                >
+                    {photos.map((img) => {
+                        return (
+                            <Image
+                                source={{ uri: img.photoURL }}
+                                style={{
+                                    width: windowWidth * 0.9,
+                                    height: 300,
+                                }}
+                            />
+                        );
+                    })}
+                </ScrollView>
 
                 <Text style={styles.text_title}>License plate:</Text>
                 <TextInput
@@ -486,13 +578,9 @@ const RentOutForm = ({ navigation, route }) => {
                             marginVertical: 10,
                             marginHorizontal: 10,
                         }}
+                        onPress={getCurrentLocation}
                     >
-                        <Text
-                            style={styles.btnLabel}
-                            onPress={getCurrentLocation}
-                        >
-                            Current Address
-                        </Text>
+                        <Text style={styles.btnLabel}>Current Address</Text>
                     </Pressable>
                     <Pressable
                         style={{
@@ -504,22 +592,16 @@ const RentOutForm = ({ navigation, route }) => {
                             marginVertical: 10,
                             marginHorizontal: 10,
                         }}
+                        onPress={() => {
+                            doForwardGeocode(street, city, country);
+                        }}
                     >
-                        <Text
-                            style={styles.btnLabel}
-                            onPress={() => {
-                                doForwardGeocode(street, city, country);
-                            }}
-                        >
-                            Confirm Address
-                        </Text>
+                        <Text style={styles.btnLabel}>Confirm Address</Text>
                     </Pressable>
                 </View>
 
-                <Pressable style={styles.btn}>
-                    <Text style={styles.btnLabel} onPress={uploadToDB}>
-                        Submit
-                    </Text>
+                <Pressable style={styles.btn} onPress={uploadToDB}>
+                    <Text style={styles.btnLabel}>Submit</Text>
                 </Pressable>
             </ScrollView>
         </SafeAreaView>
@@ -546,7 +628,7 @@ const styles = StyleSheet.create({
     container_scrollview: {
         borderColor: "black",
         borderWidth: 1,
-        width: "90%",
+        width: windowWidth * 0.9,
     },
     dropdown: {
         backgroundColor: "white",

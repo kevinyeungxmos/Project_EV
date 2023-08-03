@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 // import the auth variable
-import { auth } from "../firebaseConfig";
+import { auth, storage } from "../firebaseConfig";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import {
     collection,
@@ -29,10 +29,12 @@ import {
     query,
     where,
 } from "firebase/firestore";
+import { ref, getDownloadURL } from "firebase/storage";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { db } from "../firebaseConfig";
 import { useSafeAreaFrame } from "react-native-safe-area-context";
 import * as Location from "expo-location";
+import { onLogoutClicked } from "./SignInScreen";
 
 let unsub;
 
@@ -40,20 +42,28 @@ const ManageBooking = ({ route, navigation }) => {
     const { carReserved } = route.params;
     const [waiting, setWaiting] = useState([]);
     const [name, setName] = useState("N/A");
+    const [icon, setIcon] = useState([]);
 
     const nn = () => {
-        // carReserved.waitingList.map(async (item, index) => {
-        //     console.log("herererer");
-        //     const userDocRef = doc(db, "UserProfiles", `${item.id}`);
-        //     const docSnap = await getDoc(userDocRef);
-        //     if (docSnap.exists()) {
-        //         console.log(docSnap.data());
-        //     } else {
-        //         console.log("No such doc");
-        //     }
-        // });
-
         console.log(carReserved);
+    };
+
+    const getIcon = async (userID, index) => {
+        // const imageRef = storage.ref(`${userID}/${userID}.png`)
+        // const url = await imageRef.getDownloadURL().catch((err)=>{throw err})
+        // console.log(url)
+        // getDownloadURL(ref(storage, `${userID}/${userID}.png`))
+        //     .then((url) => {
+        //         console.log(url);
+        //         setIcon({ userID : url})
+        //     })
+        //     .catch((error) => {
+        //         console.log(error);
+        //     });
+        const abc = await getDownloadURL(ref(storage, `${userID}/${userID}.png`))
+        console.log(abc)
+        setIcon((a)=>[...a,abc])
+        console.log(icon)
     };
 
     useEffect(() => {
@@ -64,11 +74,13 @@ const ManageBooking = ({ route, navigation }) => {
                 `${carReserved.id}`
             ),
             (snapshot) => {
-                console.log("active");
-                console.log("snapshot", snapshot.data());
                 if (snapshot.data().status == "Approved") {
                     setName(snapshot.data().renter.name);
                 }
+                const allData = snapshot.data();
+                snapshot.data().waitingList.map((item, index) => {
+                    getIcon(item.id, index);
+                });
                 setWaiting(snapshot.data());
             }
         );
@@ -91,11 +103,27 @@ const ManageBooking = ({ route, navigation }) => {
             </Pressable>
         ),
         title: `${carReserved.brand} ${carReserved.model} ${carReserved.trim}`,
+        headerRight: () => (
+            <Pressable
+                onPress={() => {
+                    // onLogoutClicked();
+                    // navigation.popToTop();
+                    console.log(icon)
+                }}
+            >
+                <Icon
+                    name="sign-out"
+                    size={32}
+                    color="white"
+                    style={{ marginRight: 10, borderWidth: 1 }}
+                />
+            </Pressable>
+        ),
     });
 
     const onApprove = async (name, id, index) => {
         const newList = carReserved.waitingList;
-        newList[index].comfirmationCode = Math.floor(Math.random() * 1000000);
+        newList[index].confirmationCode = Math.floor(Math.random() * 1000000);
 
         if (waiting.status != "Approved") {
             // update status
@@ -128,7 +156,7 @@ const ManageBooking = ({ route, navigation }) => {
 
             const udd = doc(db, `UserProfiles/${id}/Reserved`, docID);
             await updateDoc(udd, {
-                comfirmationCode: newList[index].comfirmationCode,
+                confirmationCode: newList[index].confirmationCode,
                 status: "confirmed",
             });
         } else {
@@ -138,7 +166,7 @@ const ManageBooking = ({ route, navigation }) => {
 
     const onDecline = async (name, id, index) => {
         const newList = carReserved.waitingList;
-        newList[index].comfirmationCode = "declined";
+        newList[index].confirmationCode = "declined";
 
         const updateDocRef = doc(
             db,
@@ -229,14 +257,28 @@ const ManageBooking = ({ route, navigation }) => {
                                 {item.name} want to rent your vehicle
                             </Text>
 
-                            <View style={{ marginLeft: -20 }}>
-                                <Text>Booking Date: {item.date}</Text>
-                                <Text>
-                                    Comfirmation Code: {item.comfirmationCode}
-                                </Text>
+                            <View style={{ flex: 1, flexDirection: "row" }}>
+                                <Image
+                                    source={{
+                                        uri: icon[index],
+                                    }}
+                                    style={{
+                                        height: 75,
+                                        width: 75,
+                                        marginLeft: 10,
+                                    }}
+                                />
+                                <View style={{  }}>
+                                    <Text>Booking Date: {item.date}</Text>
+                                    <Text>
+                                        Comfirmation Code:{" "}
+                                        {item.confirmationCode}
+                                    </Text>
+                                </View>
                             </View>
-                            {item.comfirmationCode != "" ? (
-                                item.comfirmationCode == "declined" ? (
+
+                            {item.confirmationCode != "" ? (
+                                item.confirmationCode == "declined" ? (
                                     <Text>
                                         {item.name}'s request has been declined
                                     </Text>

@@ -30,12 +30,39 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import { db } from "../firebaseConfig";
 import { useSafeAreaFrame } from "react-native-safe-area-context";
 import * as Location from "expo-location";
+import { onLogoutClicked } from "./SignInScreen";
 
 let unsub;
 
 const Booking = ({navigation, route}) => {
     const [car, setCar] = useState([]);
     const [resub, setResub] = useState(0);
+
+    navigation.setOptions({
+        headerLeft: () => (
+            <Pressable onPress={navigation.goBack}>
+                <Icon
+                    name="angle-left"
+                    size={32}
+                    color="white"
+                    style={{ marginLeft: 10, borderWidth: 1 }}
+                />
+            </Pressable>
+        ),
+        headerRight: () => (
+            <Pressable onPress={() => {
+                onLogoutClicked();
+                navigation.popToTop();
+            }}>
+                <Icon
+                    name="sign-out"
+                    size={32}
+                    color="white"
+                    style={{ marginRight: 10, borderWidth: 1 }}
+                />
+            </Pressable>
+        ),
+    });
 
     useEffect(() => {
         unsub = onSnapshot(
@@ -106,6 +133,7 @@ const Booking = ({navigation, route}) => {
                                 style={{
                                     flexDirection: "row",
                                     alignItems: "center",
+                                    paddingTop: 5,
                                 }}
                             >
                                 <Text
@@ -127,7 +155,7 @@ const Booking = ({navigation, route}) => {
                                         marginLeft: 10,
                                     }}
                                 />
-                                <View style={{ marginLeft: 20 }}>
+                                <View style={{ marginLeft: 10, paddingRight: 110 }}>
                                     <Text
                                         style={{
                                             fontWeight: "bold",
