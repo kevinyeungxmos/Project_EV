@@ -45,7 +45,7 @@ const Booking = ({navigation, route}) => {
                     name="angle-left"
                     size={32}
                     color="white"
-                    style={{ marginLeft: 10, borderWidth: 1 }}
+                    style={{ marginLeft: 10 }}
                 />
             </Pressable>
         ),
@@ -58,7 +58,7 @@ const Booking = ({navigation, route}) => {
                     name="sign-out"
                     size={32}
                     color="white"
-                    style={{ marginRight: 10, borderWidth: 1 }}
+                    style={{ marginRight: 10}}
                 />
             </Pressable>
         ),
@@ -168,7 +168,7 @@ const Booking = ({navigation, route}) => {
                                     <Text>
                                         License Plate: {item.licensePlate}
                                     </Text>
-                                    <Text>Price: {item.price}</Text>
+                                    <Text>Price: ${item.price}</Text>
                                 </View>
                             </View>
                         </Pressable>

@@ -42,27 +42,16 @@ const ManageBooking = ({ route, navigation }) => {
     const { carReserved } = route.params;
     const [waiting, setWaiting] = useState([]);
     const [name, setName] = useState("N/A");
-    const [icon, setIcon] = useState([]);
+    const [icon, setIcon] = useState({});
 
     const nn = () => {
         console.log(carReserved);
     };
 
     const getIcon = async (userID, index) => {
-        // const imageRef = storage.ref(`${userID}/${userID}.png`)
-        // const url = await imageRef.getDownloadURL().catch((err)=>{throw err})
-        // console.log(url)
-        // getDownloadURL(ref(storage, `${userID}/${userID}.png`))
-        //     .then((url) => {
-        //         console.log(url);
-        //         setIcon({ userID : url})
-        //     })
-        //     .catch((error) => {
-        //         console.log(error);
-        //     });
-        const abc = await getDownloadURL(ref(storage, `${userID}/${userID}.png`))
-        console.log(abc)
-        setIcon((a)=>[...a,abc])
+        const urlIcon = await getDownloadURL(ref(storage, `${userID}/${userID}.png`))
+        console.log(urlIcon)
+        icon[userID] = urlIcon
         console.log(icon)
     };
 
@@ -98,7 +87,7 @@ const ManageBooking = ({ route, navigation }) => {
                     name="angle-left"
                     size={32}
                     color="white"
-                    style={{ marginLeft: 10, borderWidth: 1 }}
+                    style={{ marginLeft: 10, }}
                 />
             </Pressable>
         ),
@@ -115,7 +104,7 @@ const ManageBooking = ({ route, navigation }) => {
                     name="sign-out"
                     size={32}
                     color="white"
-                    style={{ marginRight: 10, borderWidth: 1 }}
+                    style={{ marginRight: 10, }}
                 />
             </Pressable>
         ),
@@ -212,7 +201,7 @@ const ManageBooking = ({ route, navigation }) => {
                 <View>
                     <Text>License Plate: {carReserved.licensePlate}</Text>
                     <Text>Car status: {waiting.status}</Text>
-                    <Text>Price: {carReserved.price}</Text>
+                    <Text>Price: ${carReserved.price}</Text>
                     <Text>Renter: {name}</Text>
                 </View>
                 <Text
@@ -221,7 +210,7 @@ const ManageBooking = ({ route, navigation }) => {
                         fontSize: 20,
                     }}
                 >
-                    Who are going to rent your vehicle?
+                    Who gonna rent your vehicle?
                 </Text>
             </View>
             <FlatList
@@ -254,37 +243,37 @@ const ManageBooking = ({ route, navigation }) => {
                                     marginTop: 10,
                                 }}
                             >
-                                {item.name} want to rent your vehicle
+                                {item.name} 
                             </Text>
 
-                            <View style={{ flex: 1, flexDirection: "row" }}>
+                            <View style={{ flex: 1, flexDirection: "row", padding: 5 }}>
                                 <Image
                                     source={{
-                                        uri: icon[index],
+                                        uri: icon[`${item.id}`],
                                     }}
                                     style={{
-                                        height: 75,
-                                        width: 75,
-                                        marginLeft: 10,
+                                        height: 30,
+                                        width: 30,
+                                        marginRight:10,
                                     }}
                                 />
                                 <View style={{  }}>
-                                    <Text>Booking Date: {item.date}</Text>
+                                    <Text>Booking Date: <Text style={{fontWeight:"bold"}}>{item.date}</Text></Text>
                                     <Text>
                                         Comfirmation Code:{" "}
-                                        {item.confirmationCode}
+                                        <Text style={{fontWeight:"bold"}}>{item.confirmationCode}</Text>
                                     </Text>
                                 </View>
                             </View>
 
                             {item.confirmationCode != "" ? (
                                 item.confirmationCode == "declined" ? (
-                                    <Text>
-                                        {item.name}'s request has been declined
+                                    <Text style={{color:"red"}}>
+                                        <Text style={{fontWeight:"bold"}}>{item.name}'s</Text> request has been declined
                                     </Text>
                                 ) : (
                                     <Text>
-                                        {item.name} is renting your vehicle
+                                        <Text style={{fontWeight:"bold"}}>{item.name}</Text> is renting your vehicle
                                     </Text>
                                 )
                             ) : (
@@ -293,7 +282,6 @@ const ManageBooking = ({ route, navigation }) => {
                                         flex: 1,
                                         flexDirection: "row",
                                         justifyContent: "space-evenly",
-                                        borderWidth: 1,
                                     }}
                                 >
                                     <Pressable

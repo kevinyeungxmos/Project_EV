@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, LogBox } from "react-native";
 
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -13,6 +13,8 @@ import MyCar from "./screens/MyCar";
 import CarInfo from "./screens/carInfo";
 import Booking from "./screens/Booking";
 import ManageBooking from "./screens/ManageBooking";
+
+LogBox.ignoreAllLogs();
 
 //to obtain instance of navigation stack
 const Tab = createBottomTabNavigator();

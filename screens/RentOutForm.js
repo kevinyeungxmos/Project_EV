@@ -58,7 +58,7 @@ const RentOutForm = ({ navigation, route }) => {
                     name="angle-left"
                     size={32}
                     color="white"
-                    style={{ marginLeft: 10, borderWidth: 1 }}
+                    style={{ marginLeft: 10,}}
                 />
             </Pressable>
         ),
@@ -74,7 +74,7 @@ const RentOutForm = ({ navigation, route }) => {
                     name="sign-out"
                     size={32}
                     color="white"
-                    style={{ marginRight: 10, borderWidth: 1 }}
+                    style={{ marginRight: 10,}}
                 />
             </Pressable>
         ),
@@ -621,13 +621,11 @@ const styles = StyleSheet.create({
     },
     container_view: {
         borderColor: "blue",
-        borderWidth: 1,
         flexDirection: "row",
         justifyContent: "space-evenly",
     },
     container_scrollview: {
         borderColor: "black",
-        borderWidth: 1,
         width: windowWidth * 0.9,
     },
     dropdown: {

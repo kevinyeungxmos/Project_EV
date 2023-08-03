@@ -32,6 +32,7 @@ import { useSafeAreaFrame } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 import { onLogoutClicked } from "./SignInScreen";
 
+
 const CarInfo = ({ navigation, route }) => {
     const { cardata } = route.params;
     const [brand, setBrand] = useState("");
@@ -73,7 +74,7 @@ const CarInfo = ({ navigation, route }) => {
                     name="angle-left"
                     size={32}
                     color="white"
-                    style={{ marginLeft: 10, borderWidth: 1 }}
+                    style={{ marginLeft: 10,}}
                 />
             </Pressable>
         ),
@@ -89,7 +90,7 @@ const CarInfo = ({ navigation, route }) => {
                     name="sign-out"
                     size={32}
                     color="white"
-                    style={{ marginRight: 10, borderWidth: 1 }}
+                    style={{ marginRight: 10, }}
                 />
             </Pressable>
         ),

@@ -106,7 +106,7 @@ const MyCar = ({ navigation }) => {
                     name="angle-left"
                     size={32}
                     color="white"
-                    style={{ marginLeft: 10, borderWidth: 1 }}
+                    style={{ marginLeft: 10, }}
                 />
             </Pressable>
         ),
@@ -120,7 +120,7 @@ const MyCar = ({ navigation }) => {
                     name="sign-out"
                     size={32}
                     color="white"
-                    style={{ marginRight: 10, borderWidth: 1 }}
+                    style={{ marginRight: 10, }}
                 />
             </Pressable>
         ),
